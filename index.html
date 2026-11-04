@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cuestionario Interactivo de Redes - IMR</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --correct: #22c55e;
+      --incorrect: #ef4444;
+      --border: #334155;
+    }
+
+    .light-mode {
+      --bg: #f1f5f9;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --correct: #16a34a;
+      --incorrect: #dc2626;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      width: 100%;
+      max-width: 700px;
+      padding: 30px;
+      border: 1px solid var(--border);
+      position: relative;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 15px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      color: var(--primary);
+    }
+
+    .theme-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .theme-toggle:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: bold;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      background-color: var(--border);
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 25px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--correct));
+      width: 0%;
+      transition: width 0.4s ease-in-out;
+    }
+
+    .question-title {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      line-height: 1.4;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .question-image {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      border: 1px solid var(--border);
+      display: none;
+    }
+
+    .options-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .option-btn {
+      background-color: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 14px 18px;
+      border-radius: 10px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.15s ease, border-color 0.2s, background-color 0.2s;
+      animation: popIn 0.3s ease backwards;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+      background-color: rgba(56, 189, 248, 0.1);
+      transform: translateX(4px);
+    }
+
+    .option-btn.correct {
+      background-color: rgba(34, 197, 94, 0.25);
+      border-color: var(--correct);
+      color: var(--correct);
+      font-weight: bold;
+      animation: pulseCorrect 0.4s ease;
+    }
+
+    .option-btn.incorrect {
+      background-color: rgba(239, 68, 68, 0.25);
+      border-color: var(--incorrect);
+      color: var(--incorrect);
+      animation: shakeIncorrect 0.4s ease;
+    }
+
+    @keyframes pulseCorrect {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shakeIncorrect {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .explanation {
+      background-color: var(--bg);
+      border-left: 4px solid var(--primary);
+      padding: 12px 15px;
+      margin-bottom: 20px;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: #000;
+      font-weight: bold;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .results-screen {
+      text-align: center;
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .score-circle {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 6px solid var(--primary);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px auto;
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--primary);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+    }
+
+    .ranking-box {
+      margin-top: 20px;
+      background-color: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 15px;
+      text-align: left;
+    }
+
+    .ranking-box h3 {
+      margin-bottom: 10px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .ranking-list {
+      list-style: none;
+      font-size: 0.9rem;
+    }
+
+    .ranking-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .ranking-item:last-child {
+      border-bottom: none;
+    }
+
+    footer {
+      margin-top: 25px;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: 15px;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Redes IMR Quiz</h1>
+      <button class="theme-toggle" onclick="toggleTheme()">Modo Claro/Oscuro</button>
+    </header>
+
+    <div id="quiz-screen">
+      <div class="top-bar">
+        <span>Pregunta <span id="current-q">1</span> de 10</span>
+        <span>Tiempo: <span id="timer">30</span>s</span>
+      </div>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progress"></div>
+      </div>
+
+      <div class="question-title" id="question-text">Cargando pregunta...</div>
+      <img id="question-img" class="question-image" src="" alt="Imagen demostrativa de red">
+
+      <div class="options-grid" id="options-container"></div>
+
+      <div class="explanation" id="explanation-box"></div>
+
+      <div class="actions">
+        <button class="btn" id="next-btn" onclick="nextQuestion()" style="display: none;">Siguiente</button>
+      </div>
+    </div>
+
+    <div id="results-screen" class="results-screen">
+      <h2>¡Cuestionario Completado!</h2>
+      <div class="score-circle" id="final-score">0 / 10</div>
+      <p id="score-message" style="margin-bottom: 20px; color: var(--text-muted);"></p>
+      
+      <div class="ranking-box">
+        <h3>🏆 Ranking Local (Mejores Puntuaciones)</h3>
+        <ul class="ranking-list" id="ranking-list">
+          <li class="ranking-item"><span>Sin puntuaciones aún</span></li>
+        </ul>
+      </div>
+
+      <button class="btn" onclick="startQuiz()" style="margin-top: 20px;">Volver a Jugar</button>
+    </div>
+
+    <footer>
+      <p>Autor: <strong>USIEL</strong> | Módulo IMR</p>
+    </footer>
+  </div>
+
+  <script>
+    const questionBank = [
+      {
+        q: "¿Qué significan las siglas IP en el ámbito de las redes?",
+        img: "",
+        o: ["Internet Protocol", "Internal Process", "Interconnected Path", "Information Provider"],
+        a: 0,
+        e: "IP significa Internet Protocol, el protocolo fundamental para enrutar paquetes en una red."
+      },
+      {
+        q: "¿Qué estándar define el orden de cables: Blanco/Naranja, Naranja, Blanco/Verde, Azul, Blanco/Azul, Verde, Blanco/Marrón, Marrón?",
+        img: "",
+        o: ["T568A", "T568B", "IEEE 802.3", "ISO 9001"],
+        a: 1,
+        e: "El estándar T568B comienza con los pares Naranja y Verde en las posiciones 1-2 y 3-6."
+      },
+      {
+        q: "¿Qué estándar de cableado estructurado comienza por el par Blanco/Verde y Verde?",
+        img: "",
+        o: ["T568B", "T568A", "RJ45-C", "Cat6A"],
+        a: 1,
+        e: "El estándar T568A inicia con el par Blanco/Verde en los primeros pines."
+      },
+      {
+        q: "¿Qué tipo de conector de cobre se utiliza habitualmente en cables de red UTP?",
+        img: "",
+        o: ["RJ11", "RJ45", "SC", "LC"],
+        a: 1,
+        e: "El conector RJ45 de 8 pines es el estándar para redes Ethernet en cable UTP."
+      },
+      {
+        q: "¿Qué herramienta se utiliza para fijar físicamente los pines del conector RJ45 al cable?",
+        img: "",
+        o: ["Pelacables", "Tester de red", "Crimpadora", "Grip de sujeción"],
+        a: 2,
+        e: "La crimpadora ejerce presión para fijar los contactos metálicos del conector a los hilos de cobre."
+      },
+      {
+        q: "¿Qué tipo de conector de fibra óptica tiene un sistema de fijación a presión rectangular de 2.5 mm?",
+        img: "",
+        o: ["LC", "SC", "RJ45", "ST"],
+        a: 1,
+        e: "El conector SC (Subscriber Connector) se caracteriza por su forma rectangular y férula de 2.5 mm."
+      },
+      {
+        q: "¿Qué conector de fibra óptica es de factor de forma pequeño (SFF) con férula de 1.25 mm?",
+        img: "",
+        o: ["SC", "LC", "FC", "BNC"],
+        a: 1,
+        e: "El conector LC (Lucent Connector) usa una férula reducida de 1.25 mm, común en alta densidad."
+      },
+      {
+        q: "¿Qué ventaja principal ofrece la fibra óptica frente al cable de cobre UTP?",
+        img: "",
+        o: ["Es más barata", "Inmunidad a interferencias electromagnéticas", "Más fácil de crimpar", "Usa conectores RJ45"],
+        a: 1,
+        e: "Al transmitir pulsos de luz en lugar de electricidad, no sufre interferencias electromagnéticas."
+      },
+      {
+        q: "¿Qué fenómeno físico permite que la luz viaje por el núcleo de una fibra óptica sin escaparse?",
+        img: "",
+        o: ["Refracción simple", "Reflexión interna total", "Difracción cuántica", "Dispersión cromática"],
+        a: 1,
+        e: "La reflexión interna total hace que la luz rebote continuamente dentro del núcleo."
+      },
+      {
+        q: "¿Qué significan las siglas UTP en cableado de red?",
+        img: "",
+        o: ["Unshielded Twisted Pair", "Universal Transmission Protocol", "United Telecommunication Path", "Underground Transmission Pipe"],
+        a: 0,
+        e: "UTP corresponde a Unshielded Twisted Pair (Par Trenzado No Apantallado)."
+      },
+      {
+        q: "¿Qué dispositivo se usa para verificar la continuidad y el orden de los pares de un cable de red recién fabricado?",
+        img: "",
+        o: ["Crimpadora", "Tester de red", "Fusionadora", "Switch"],
+        a: 1,
+        e: "El tester de red envía señales secuenciales para comprobar que los 8 hilos están bien conectados."
+      },
+      {
+        q: "¿Cuál es el color estándar de la cubierta exterior para cables de fibra multimodo OM4?",
+        img: "",
+        o: ["Amarillo", "Naranja", "Violeta", "Verde"],
+        a: 2,
+        e: "La normativa asigna el color violeta (Erika Violet) a la categoría de fibra multimodo OM4."
+      },
+      {
+        q: "¿Qué color suele identificar a los latiguillos de fibra óptica monomodo (OS2)?",
+        img: "",
+        o: ["Violeta", "Amarillo", "Azul", "Gris"],
+        a: 1,
+        e: "El color amarillo identifica a las fibras monomodo OS1 y OS2."
+      },
+      {
+        q: "¿Qué diferencia a una fibra multimodo de una monomodo?",
+        img: "",
+        o: ["La fibra multimodo permite múltiples modos o trayectorias de luz en el núcleo", "La multimodo alcanza miles de kilómetros", "La monomodo usa conector RJ45", "La monomodo no usa cristal"],
+        a: 0,
+        e: "La fibra multimodo tiene un núcleo más ancho donde la luz viaja en múltiples trayectorias o modos."
+      },
+      {
+        q: "¿Qué indica la notación '50/125' en la especificación de un cable de fibra óptica?",
+        img: "",
+        o: ["50 Mbps a 125 metros", "Núcleo de 50 micrometros y revestimiento de 125 micrometros", "50 conectores por 125 metros", "Frecuencia de 50 a 125 MHz"],
+        a: 1,
+        e: "Corresponde al diámetro del núcleo (50 µm) y del revestimiento o cladding (125 µm)."
+      },
+      {
+        q: "¿Qué significa 'DX' en una referencia de cable de fibra óptica?",
+        img: "",
+        o: ["Duplex", "Direct Cable", "Data Transmission", "Digital Extension"],
+        a: 0,
+        e: "DX significa Duplex, indicando un cable formado por dos fibras para transmisión y recepción simultánea."
+      },
+      {
+        q: "¿Qué tipo de pulido en conectores de fibra óptica presenta un color verde en su estructura externa?",
+        img: "",
+        o: ["PC", "UPC", "APC", "Flat"],
+        a: 2,
+        e: "El pulido APC (Angled Physical Contact) se identifica siempre con el color verde."
+      },
+      {
+        q: "¿Qué longitud máxima recomendada se establece para un canal de cableado de cobre UTP en Ethernet?",
+        img: "",
+        o: ["50 metros", "100 metros", "500 metros", "1000 metros"],
+        a: 1,
+        e: "El límite de distancia recomendado por la norma para cobre UTP en Ethernet es de 100 metros."
+      },
+      {
+        q: "¿Qué categoría de fibra multimodo está optimizada para redes Ethernet de 10 Gbps hasta 300 metros?",
+        img: "",
+        o: ["OM1", "OM2", "OM3", "OS1"],
+        a: 2,
+        e: "La fibra OM3 es una fibra multimodo optimizada para láser (Laser-Optimized) diseñada para 10 Gbps a 300m."
+      },
+      {
+        q: "¿Qué elemento del cable UTP ayuda a reducir la diafonía (crosstalk)?",
+        img: "",
+        o: ["El conector plástico", "El trenzado de los pares de hilos", "La cubierta exterior", "El color de los hilos"],
+        a: 1,
+        e: "El trenzado de los hilos de cobre cancela las interferencias electromagnéticas entre pares adyacentes."
+      },
+      {
+        q: "¿Qué significa el acrónimo MAC en el contexto de las tarjetas de red?",
+        img: "",
+        o: ["Media Access Control", "Memory Access Center", "Main Automation Code", "Master Address Control"],
+        a: 0,
+        e: "MAC corresponde a Media Access Control, la dirección física grabada en el hardware de red."
+      },
+      {
+        q: "¿Cuál de los siguientes es un inconveniente principal de la fibra óptica en comparación con el cobre?",
+        img: "",
+        o: ["Bajo ancho de banda", "Sensibilidad a interferencias", "Mayor coste de instalación y dificultad de empalme", "Corto alcance"],
+        a: 2,
+        e: "La fibra óptica requiere herramientas especializadas (como fusionadoras) y es más costosa de instalar."
+      },
+      {
+        q: "¿Qué tipo de cable de red se debe utilizar para conectar directamente dos PCs entre sí sin pasar por un switch (red antigua)?",
+        img: "",
+        o: ["Cable directo", "Cable cruzado", "Cable de fibra monomodo", "Cable coaxial plano"],
+        a: 1,
+        e: "Un cable cruzado tiene T568A en un extremo y T568B en el otro para cruzar emisión y recepción."
+      },
+      {
+        q: "¿Qué herramienta se utiliza para retirar la cubierta exterior del cable de par trenzado sin cortar los hilos interiores?",
+        img: "",
+        o: ["Crimpadora", "Pelacables / Tijeras de electricista", "Fusionadora", "Tester"],
+        a: 1,
+        e: "El pelacables muesca la cubierta exterior para retirar el plástico protector de forma segura."
+      },
+      {
+        q: "¿Qué significan las siglas LAN?",
+        img: "",
+        o: ["Large Access Network", "Local Area Network", "Light Alignment Node", "Link Allocation Number"],
+        a: 1,
+        e: "LAN corresponde a Local Area Network (Red de Área Local)."
+      },
+      {
+        q: "¿Qué conector de fibra óptica utiliza una fijación tipo bayoneta de giro metálica?",
+        img: "",
+        o: ["SC", "LC", "ST", "RJ45"],
+        a: 2,
+        e: "El conector ST (Straight Tip) utiliza un enganche tipo bayoneta similar a los conectores BNC."
+      },
+      {
+        q: "¿Qué componente convierte señales eléctricas en impulsos de luz en una red de fibra óptica?",
+        img: "",
+        o: ["Switch sin puertos SFP", "Transceptor óptico (SFP)", "Crimpadora", "Latiguillo de cobre"],
+        a: 1,
+        e: "Los módulos transceptores SFP/SFP+ convierten impulsos eléctricos en luz y viceversa."
+      },
+      {
+        q: "¿Qué dirección IP de las siguientes pertenece a un rango privado de Clase A según RFC 1918?",
+        img: "",
+        o: ["192.168.1.1", "10.0.0.1", "172.16.0.1", "8.8.8.8"],
+        a: 1,
+        e: "El rango 10.0.0.0 a 10.255.255.255 está reservado para redes privadas dentro de la Clase A."
+      },
+      {
+        q: "¿Qué función cumple la férula (ferrule) en un conector de fibra óptica?",
+        img: "",
+        o: ["Proteger la cubierta exterior", "Alinear con precisión el núcleo de la fibra", "Crimpar el conector al cable", "Aumentar el voltaje del enlace"],
+        a: 1,
+        e: "La férula es el cilindro central (cerámica o plástico) que sostiene y alinea el hilo de fibra óptica."
+      },
+      {
+        q: "¿Qué estándar Ethernet soporta velocidades de hasta 1000 Mbps (1 Gbps) sobre cableado de cobre?",
+        img: "",
+        o: ["10BASE-T", "100BASE-TX", "1000BASE-T", "10GBASE-SR"],
+        a: 2,
+        e: "1000BASE-T es el estándar de Gigabit Ethernet sobre cable de par trenzado de cobre."
+      }
+    ];
+
+    let selectedQuestions = [];
+    let currentIndex = 0;
+    let score = 0;
+    let timer;
+    let timeLeft = 30;
+    let canAnswer = true;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } else {
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(164.81, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      }
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('light-mode');
+    }
+
+    function shuffleArray(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function startQuiz() {
+      selectedQuestions = shuffleArray([...questionBank]).slice(0, 10);
+      currentIndex = 0;
+      score = 0;
+      document.getElementById('quiz-screen').style.display = 'block';
+      document.getElementById('results-screen').style.display = 'none';
+      showQuestion();
+    }
+
+    function showQuestion() {
+      canAnswer = true;
+      clearInterval(timer);
+      timeLeft = 30;
+      document.getElementById('timer').innerText = timeLeft;
+      document.getElementById('next-btn').style.display = 'none';
+      document.getElementById('explanation-box').style.display = 'none';
+
+      const q = selectedQuestions[currentIndex];
+      document.getElementById('current-q').innerText = currentIndex + 1;
+      document.getElementById('question-text').innerText = q.q;
+      
+      const imgElem = document.getElementById('question-img');
+      if (q.img && q.img.trim() !== "") {
+        imgElem.src = q.img;
+        imgElem.style.display = 'block';
+      } else {
+        imgElem.style.display = 'none';
+      }
+
+      const progressPercent = ((currentIndex) / 10) * 100;
+      document.getElementById('progress').style.width = `${progressPercent}%`;
+
+      const optionsContainer = document.getElementById('options-container');
+      optionsContainer.innerHTML = '';
+
+      const formattedOptions = q.o.map((opt, idx) => ({ text: opt, isCorrect: idx === q.a }));
+      const shuffledOptions = shuffleArray(formattedOptions);
+
+      shuffledOptions.forEach((option, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.style.animationDelay = `${index * 0.05}s`;
+        btn.innerText = option.text;
+        btn.onclick = () => selectOption(option.isCorrect, btn, shuffledOptions);
+        optionsContainer.appendChild(btn);
+      });
+
+      timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').innerText = timeLeft;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          autoFail(shuffledOptions);
+        }
+      }, 1000);
+    }
+
+    function selectOption(isCorrect, selectedBtn, options) {
+      if (!canAnswer) return;
+      canAnswer = false;
+      clearInterval(timer);
+
+      const q = selectedQuestions[currentIndex];
+      const buttons = document.querySelectorAll('.option-btn');
+
+      if (isCorrect) {
+        selectedBtn.classList.add('correct');
+        score++;
+        playSound('correct');
+      } else {
+        selectedBtn.classList.add('incorrect');
+        buttons.forEach((btn, idx) => {
+          if (options[idx].isCorrect) btn.classList.add('correct');
+        });
+        playSound('incorrect');
+      }
+
+      buttons.forEach(btn => btn.disabled = true);
+      showExplanation(q.e);
+    }
+
+    function autoFail(options) {
+      canAnswer = false;
+      const q = selectedQuestions[currentIndex];
+      const buttons = document.querySelectorAll('.option-btn');
+      
+      buttons.forEach((btn, idx) => {
+        if (options[idx].isCorrect) btn.classList.add('correct');
+        btn.disabled = true;
+      });
+
+      playSound('incorrect');
+      showExplanation(q.e + " (Tiempo agotado)");
+    }
+
+    function showExplanation(text) {
+      const expBox = document.getElementById('explanation-box');
+      expBox.innerText = text;
+      expBox.style.display = 'block';
+      document.getElementById('next-btn').style.display = 'block';
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex < 10) {
+        showQuestion();
+      } else {
+        showResults();
+      }
+    }
+
+    function saveScore(newScore) {
+      let ranking = JSON.parse(localStorage.getItem('imr_ranking') || '[]');
+      const date = new Date().toLocaleDateString();
+      ranking.push({ score: newScore, date: date });
+      ranking.sort((a, b) => b.score - a.score);
+      ranking = ranking.slice(0, 5);
+      localStorage.setItem('imr_ranking', JSON.stringify(ranking));
+      renderRanking();
+    }
+
+    function renderRanking() {
+      const rankingList = document.getElementById('ranking-list');
+      let ranking = JSON.parse(localStorage.getItem('imr_ranking') || '[]');
+      if (ranking.length === 0) {
+        rankingList.innerHTML = '<li class="ranking-item"><span>Sin puntuaciones aún</span></li>';
+        return;
+      }
+      rankingList.innerHTML = ranking.map((item, idx) => 
+        `<li class="ranking-item"><span>#${idx + 1} - USIEL (${item.date})</span> <strong>${item.score} / 10 pts</strong></li>`
+      ).join('');
+    }
+
+    function showResults() {
+      document.getElementById('quiz-screen').style.display = 'none';
+      document.getElementById('results-screen').style.display = 'block';
+      document.getElementById('progress').style.width = '100%';
+      document.getElementById('final-score').innerText = `${score} / 10`;
+
+      saveScore(score);
+
+      const message = document.getElementById('score-message');
+      if (score >= 9) {
+        message.innerText = "¡Excelente! Dominas los fundamentos de redes.";
+      } else if (score >= 5) {
+        message.innerText = "¡Bien hecho! Buen conocimiento de la materia.";
+      } else {
+        message.innerText = "Necesitas repasar los apuntes de IMR.";
+      }
+    }
+
+    startQuiz();
+  </script>
+</body>
+</html>
